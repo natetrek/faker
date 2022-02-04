@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@babel/highlight': ~7.16.10
   '@types/node': ~16.11.22
   '@types/prettier': ~2.4.3
   '@types/validator': ~13.7.1
@@ -17,6 +18,7 @@ specifiers:
   eslint-plugin-jsdoc: ~37.7.1
   esno: ~0.14.0
   lint-staged: ~12.3.3
+  marked: ~4.0.12
   npm-run-all: ~4.1.5
   picocolors: ~1.0.0
   prettier: 2.5.1
@@ -31,6 +33,7 @@ specifiers:
   vitest: ~0.2.7
 
 devDependencies:
+  '@babel/highlight': 7.16.10
   '@types/node': 16.11.22
   '@types/prettier': 2.4.3
   '@types/validator': 13.7.1
@@ -47,6 +50,7 @@ devDependencies:
   eslint-plugin-jsdoc: 37.7.1_eslint@8.8.0
   esno: 0.14.0_typescript@4.5.5
   lint-staged: 12.3.3
+  marked: 4.0.12
   npm-run-all: 4.1.5
   picocolors: 1.0.0
   prettier: 2.5.1

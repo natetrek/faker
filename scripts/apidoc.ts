@@ -2,7 +2,9 @@ import * as TypeDoc from 'typedoc';
 import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { format } from 'prettier';
+import { marked } from 'marked';
 import options from '../.prettierrc.cjs';
+import highlight from '@babel/highlight';
 import faker from '../src';
 import type {
   Method,
@@ -17,45 +19,24 @@ const pathOutputJson = resolve(pathOutputDir, 'typedoc.json');
 
 const scriptCommand = 'pnpm run generate:api-docs';
 
+marked.setOptions({
+  renderer: new marked.Renderer(),
+  highlight: highlight,
+  langPrefix: 'hljs language-', // highlight.js css expects a top-level 'hljs' class.
+  pedantic: false,
+  gfm: true,
+  breaks: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false,
+  xhtml: false,
+});
+
 function toBlock(comment?: TypeDoc.Comment): string {
   return (
     (comment?.shortText.trim() || 'Missing') +
     (comment?.text ? '\n\n' + comment.text : '')
   );
-}
-
-// https://stackoverflow.com/a/6234804/6897682
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function parameterRow(
-  name: string,
-  type?: string,
-  def?: string,
-  comment?: TypeDoc.Comment
-): string {
-  def = def ? `<code>${def}</code>` : '';
-  return `<tr>
-  <td>${escapeHtml(name)}</td>
-  <td>${escapeHtml(type)}</td>
-  <td>${def}</td>
-  <td>
-
-::: v-pre
-
-${toBlock(comment)}
-
-:::
-
-  </td>
-</tr>
-`;
 }
 
 async function build(): Promise<void> {
@@ -122,7 +103,7 @@ async function build(): Promise<void> {
         signatureTypeParameters.push(parameter.name);
         parameters.push({
           name: parameter.name,
-          description: toBlock(parameter.comment),
+          description: marked.parse(toBlock(parameter.comment)),
         });
       }
 
@@ -156,7 +137,7 @@ async function build(): Promise<void> {
           name: parameter.name,
           type: parameterType,
           default: parameterDefault,
-          description: toBlock(parameter.comment),
+          description: marked.parse(toBlock(parameter.comment)),
         });
       }
 
@@ -196,10 +177,10 @@ async function build(): Promise<void> {
 
       methods.push({
         name: prettyMethodName,
-        description: toBlock(signature.comment),
+        description: marked.parse(toBlock(signature.comment)),
         parameters: parameters,
         returns: signature.type.toString(),
-        examples: examples,
+        examples: marked.parse('```ts\n' + examples + '\n```'),
       });
     }
 
@@ -207,9 +188,10 @@ async function build(): Promise<void> {
     let content = `
       <script setup>
       import ApiDocsMethod from '../.vitepress/components/api-docs/method.vue'
+      import { ${lowerModuleName} } from './${lowerModuleName}'
       import { ref } from 'vue';
 
-      const methods = ref(${JSON.stringify(methods)});
+      const methods = ref(${lowerModuleName});
       </script>
 
       # ${moduleName}
@@ -234,6 +216,22 @@ async function build(): Promise<void> {
     // Write to disk
 
     writeFileSync(resolve(pathOutputDir, lowerModuleName + '.md'), content);
+
+    let contentTs = `
+    import type { Method } from '../.vitepress/components/api-docs/method';
+
+    export const ${lowerModuleName}: Method[] = ${JSON.stringify(
+      methods,
+      null,
+      2
+    )}`;
+
+    contentTs = format(contentTs, {
+      ...options,
+      parser: 'typescript',
+    });
+
+    writeFileSync(resolve(pathOutputDir, lowerModuleName + '.ts'), contentTs);
   }
 
   // Write api-pages.mjs

@@ -12,14 +12,12 @@ const props = defineProps<{ method: Method }>();
     <div v-html="props.method.description"></div>
 
     <MethodParameters
-      v:if="props.parameters"
+      v:if="props.parameters.length > 0"
       :parameters="props.method.parameters"
     />
 
     <p><strong>Returns:</strong> {{ props.method.returns }}</p>
 
-    <div class="language-ts">
-      <pre><code>{{ props.method.examples }}</code></pre>
-    </div>
+    <div class="language-ts" v-html="props.method.examples" />
   </div>
 </template>
